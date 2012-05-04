@@ -1,0 +1,49 @@
+<?xml version="1.0" encoding="UTF-8"?>
+<project xmlns="http://maven.apache.org/POM/4.0.0"
+         xmlns:xsi="http://www.w3.org/2001/XMLSchema-instance"
+         xsi:schemaLocation="http://maven.apache.org/POM/4.0.0 http://maven.apache.org/xsd/maven-4.0.0.xsd">
+    <modelVersion>4.0.0</modelVersion>
+
+    <groupId>parser</groupId>
+    <artifactId>parser</artifactId>
+    <version>1.0</version>
+    <build>
+    <plugins>
+        <plugin>
+            <groupId>org.apache.maven.plugins</groupId>
+            <artifactId>maven-shade-plugin</artifactId>
+            <version>1.5</version>
+            <executions>
+                <execution>
+                    <phase>package</phase>
+                    <goals>
+                        <goal>shade</goal>
+                    </goals>
+                    <configuration>
+                        <transformers>
+                            <transformer
+                                    implementation="org.apache.maven.plugins.shade.resource.ManifestResourceTransformer">
+                                <manifestEntries>
+                                    <Main-Class>Parser</Main-Class>
+                                    <Build-Number>0.01</Build-Number>
+                                </manifestEntries>
+                            </transformer>
+                        </transformers>
+                        <filters>
+                            <filter>
+                                <artifact>org.osgi</artifact>
+                                <excludes>
+                                    <exclude>META-INF/OSGI.RSA</exclude>
+                                    <exclude>META-INF/OSGI.SF</exclude>
+                                </excludes>
+                            </filter>
+                        </filters>
+                    </configuration>
+                </execution>
+            </executions>
+        </plugin>
+    </plugins>
+    </build>
+
+    
+</project>
