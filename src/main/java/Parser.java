@@ -5,7 +5,6 @@ import javax.xml.parsers.SAXParserFactory;
 import org.xml.sax.Attributes;
 import org.xml.sax.SAXException;
 import org.xml.sax.helpers.DefaultHandler;
-import parser.container.Offer;
 
 import java.io.*;
 
@@ -33,48 +32,48 @@ public class Parser {
             if (f.exists()) {
                 f.delete();
             }
-            final PrintWriter pw = new PrintWriter(new OutputStreamWriter(new FileOutputStream(path, true), "UTF-8"));
+            //final PrintWriter pw = new PrintWriter(new OutputStreamWriter(new FileOutputStream(path, true), "UTF-8"));
+            final BufferedWriter  bw = new BufferedWriter(new FileWriter(path));
 
             SAXParserFactory factory = SAXParserFactory.newInstance();
             SAXParser saxParser = factory.newSAXParser();
 
             DefaultHandler handler = new DefaultHandler() {
                 String current;
-                Offer offer = new Offer();
+                StringBuffer sb = new StringBuffer();
+                String tmp;
 
                 public void startElement(String uri, String localName, String qName,
                                          Attributes attributes) throws SAXException {
 
                     current = qName;
                     if (qName.equals("offer")) {
-                        offer = new Offer();
+                        sb = new StringBuffer();
                     }
 
                 }
 
                 public void endElement(String uri, String localName,
                                        String qName) throws SAXException {
-                    if (qName.equals("offer")) {
-                        pw.println(offer.toFlatString());        //todo put offers in list & write more then one
-                        pw.flush();
+                    if (qName.equals("offer")) {  //todo find second elements
+                        try{
+                            bw.write(sb.toString().trim().replace('\n',' ') +"\n");
+                            bw.newLine();
+                        }catch (IOException e){}
+                        //pw.flush();
+                        //pw.println(sb.toString());
+                    }else{
+                        sb.append(",");
                     }
+
 
                 }
 
                 public void characters(char ch[], int start, int length) throws SAXException {
-                    //debug("state current:"+current+":"+(new String(ch, start, length)));
-                    if (current.equals("propertyid")) offer.propertiId += (new String(ch, start, length));
-                    if (current.equals("arrivaldate")) offer.arrivalDate += (new String(ch, start, length));
-                    if (current.equals("departuredate")) offer.departureDate += (new String(ch, start, length));
-                    if (current.equals("nights")) offer.nights += (new String(ch, start, length));
-                    if (current.equals("baserate")) offer.baserate += (new String(ch, start, length));
-                    if (current.equals("totalbaserate")) offer.totalbaserate += (new String(ch, start, length));
-                    if (current.equals("offerbaserate")) offer.offerbaserate += (new String(ch, start, length));
-                    if (current.equals("offertotalrate")) offer.offertotalrate += (new String(ch, start, length));
-                    if (current.equals("currency")) offer.currensy += (new String(ch, start, length));
-                    if (current.equals("book_now")) offer.links.book_now += (new String(ch, start, length));
-                    if (current.equals("send_enquiry")) offer.links.send_equiry += (new String(ch, start, length));
-                    if (current.equals("listing")) offer.links.listing += (new String(ch, start, length));
+                    //if(tmp.equals(current))
+                    sb.append(ch, start, length);
+                    tmp = current;
+
                 }
             };
             saxParser.parse(file, handler);
@@ -86,8 +85,6 @@ public class Parser {
             e.printStackTrace();
         }
         debug("Finish time :" + (System.currentTimeMillis() - time) / 1000);
-        return;
-
     }
 
 
