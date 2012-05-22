@@ -1,3 +1,5 @@
+package util;
+
 import container.Element;
 
 import java.sql.*;
@@ -47,7 +49,6 @@ public class Loader {
     }
 
     public static void insertLine(List<Element> rows) {
-        debug("items insert:"+rows.size());
 
         try {
             if(connection == null)
@@ -62,8 +63,10 @@ public class Loader {
                 ps.setString(4,item.tag_name);
                 ps.setString(5,item.value);
                 ps.executeUpdate();
+                ps.close();
             }
-            connection.commit();
+            rows.clear();
+            //connection.commit();
         }
         catch (ClassNotFoundException e) {
             e.printStackTrace();
@@ -88,7 +91,7 @@ public class Loader {
         String password = "123";
 
         connection = DriverManager.getConnection(url, username, password);
-        connection.setAutoCommit(false);
+        //connection.setAutoCommit(false);
         System.out.println("is connect to DB" + connection);
     }
 
