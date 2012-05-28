@@ -13,30 +13,60 @@ import java.util.List;
 public class Loader {
     public static Connection connection;
 
-    public static void createTable(List<String> rows,String name) {
-        debug("items create:"+rows.size());
+
+    // ALTER TABLE `data_a` ADD INDEX `Index 1` (`id`), ADD INDEX `Index 2` (`type`), ADD INDEX `Index 3` (`tag_id`), ADD INDEX `Index 4` (`tag_name`);
+    public static void createIndex(String name) {
         try {
-            if(connection == null)
+            if (connection == null)
                 openConnection();
-            ///String query = "Select 7 FROM dual";
-//            CREATE TABLE `xml_1` (
-//            `id_1` VARCHAR(255) NULL,
-//            `id_2` VARCHAR(255) NULL
-//            )
-//            COLLATE='utf8_general_ci'
-//            ENGINE=InnoDB;
-            String query =  "CREATE TABLE xml_"+name+"( ";
-            for (String item : rows) {
-                query += item+" VARCHAR(100) NULL,";
-            }
-            query= query.subSequence(0,query.length()-1)+ " )\n" +
-                    "            COLLATE='utf8_general_ci'\n" +
-                    "            ENGINE=InnoDB;";
-            debug(query);
-
+            String query = "ALTER TABLE  " + name + " ADD INDEX `Index 1` (`id`), ADD INDEX `Index 2` (`type`), ADD INDEX `Index 3` (`tag_id`), ADD INDEX `Index 4` (`tag_name`);";
             Statement stmt = connection.createStatement();
-
             stmt.execute(query);
+            stmt.close();
+            debug("index created in:"+ name);
+        } catch (SQLException e) {
+            //e.printStackTrace();
+            debug("not exist " + name);
+        } catch (ClassNotFoundException e) {
+            e.printStackTrace();
+            // Could not find the database driver
+        }
+    }
+
+    public static void createTable(String name) {
+
+        try {
+            if (connection == null)
+                openConnection();
+            String query = "DROP TABLE " + name + ";";
+            Statement stmt = connection.createStatement();
+            stmt.execute(query);
+            stmt.close();
+            debug("droped "+ name);
+        } catch (SQLException e) {
+            //e.printStackTrace();
+            debug("not exist " + name);
+        } catch (ClassNotFoundException e) {
+            e.printStackTrace();
+            // Could not find the database driver
+        }
+
+        try {
+            if (connection == null)
+                openConnection();
+            String query = "CREATE TABLE " + name + " (\n" +
+                    "\t`id` INT(10) NOT NULL,\n" +
+                    "\t`type` VARCHAR(50) NOT NULL,\n" +
+                    "\t`tag_id` INT(10) NOT NULL,\n" +
+                    "\t`tag_name` VARCHAR(250) NOT NULL,\n" +
+                    "\t`value` VARCHAR(5000) NOT NULL\n" +
+                    ")\n" +
+                    "COLLATE='utf8_general_ci'\n" +
+                    "ENGINE=MyISAM;";
+            Statement stmt = connection.createStatement();
+            stmt.execute(query);
+            stmt.close();
+            debug("created " + name);
             //closeConnection();
         } // end try
         catch (ClassNotFoundException e) {
@@ -48,27 +78,67 @@ public class Loader {
         }
     }
 
-    public static void insertLine(List<Element> rows) {
-
+    public static void insertLine(List<Element> rows, String table) {
+        //debug("insert size:" + rows.size());
         try {
-            if(connection == null)
+            if (connection == null)
                 openConnection();
 
             for (Element item : rows) {
-                String query =  "INSERT INTO data VALUES (?,?,?,?,?); ";
+                if (item.value.length() > 4998) debug("large value in:" + item.id + " " + item.tag_name);
+                if  ( item.value.trim().equals("") ) continue;
+                String query = "INSERT INTO " + table + " VALUES (?,?,?,?,?); ";
                 PreparedStatement ps = connection.prepareStatement(query);
-                ps.setInt(1,item.id);
-                ps.setString(2,item.type);
-                ps.setInt(3,item.tag_id);
-                ps.setString(4,item.tag_name);
-                ps.setString(5,item.value);
+                ps.setInt(1, item.id);
+                ps.setString(2, item.type);
+                ps.setInt(3, item.tag_id);
+                ps.setString(4, item.tag_name);
+                ps.setString(5, (item.value.length() > 4998) ? item.value.substring(0, 4998) : item.value);
                 ps.executeUpdate();
                 ps.close();
             }
             rows.clear();
-            //connection.commit();
+            connection.commit();
+        } catch (ClassNotFoundException e) {
+            e.printStackTrace();
+        } catch (SQLException e) {
+            e.printStackTrace();
         }
-        catch (ClassNotFoundException e) {
+    }
+
+    public static void bigInsertLine(List<Element> rows, String table) {
+
+        try {
+            if (connection == null)
+                openConnection();
+
+            String query = "INSERT INTO " + table + " VALUES (";
+            for (Element item : rows) {
+                if  ( item.value.trim().equals("") ) continue;
+                query += "?,?,?,?,?),(";
+            }
+            query = query.substring(0, query.length() - 2) + ";";
+            int i = 1;
+            PreparedStatement ps = connection.prepareStatement(query);
+            for (Element item : rows) {
+                if (item.value.length() > 4998) debug("large value in:" + item.id + " " + item.tag_name);
+                if  ( item.value.trim().equals("") ) continue;
+                ps.setInt(i, item.id);
+                i++;
+                ps.setString(i, item.type);
+                i++;
+                ps.setInt(i, item.tag_id);
+                i++;
+                ps.setString(i, item.tag_name);
+                i++;
+                ps.setString(i, (item.value.length() > 4998) ? item.value.substring(0, 4998) : item.value);
+                i++;
+            }
+            ps.executeUpdate();
+            ps.close();
+            rows.clear();
+            connection.commit();
+        } catch (ClassNotFoundException e) {
             e.printStackTrace();
         } catch (SQLException e) {
             e.printStackTrace();
@@ -91,11 +161,11 @@ public class Loader {
         String password = "123";
 
         connection = DriverManager.getConnection(url, username, password);
-        //connection.setAutoCommit(false);
+        connection.setAutoCommit(false);
         System.out.println("is connect to DB" + connection);
     }
 
-    static void debug(String msg){
+    static void debug(String msg) {
         System.out.println(msg);
     }
 }
